@@ -187,6 +187,7 @@ struct hax_module_version {
 #define HAX_CAP_64BIT_SETRAM       (1 << 4)
 #define HAX_CAP_TUNNEL_PAGE        (1 << 5)
 #define HAX_CAP_RAM_PROTECTION     (1 << 6)
+#define HAX_CAP_DEBUG              (1 << 7)
 
 struct hax_capabilityinfo {
     /*
@@ -281,6 +282,7 @@ struct hax_qemu_version {
 
 struct hax_debug_t {
     uint32_t control;
+    uint32_t reserved;
     uint64_t dr[8];
 } PACKED;
 

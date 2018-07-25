@@ -2241,7 +2241,6 @@ static int exit_exc_nmi(struct vcpu_t *vcpu, struct hax_tunnel *htun)
             break;
         }
         case VECTOR_DB: {
-            hax_warning("#DB!\n");
             htun->_exit_status = HAX_EXIT_DEBUG;
             htun->debug.rip = vcpu->state->_rip;
             htun->debug.dr6 = vmx(vcpu, exit_qualification).raw;
@@ -2249,7 +2248,6 @@ static int exit_exc_nmi(struct vcpu_t *vcpu, struct hax_tunnel *htun)
             return HAX_EXIT;
         }
         case VECTOR_BP: {
-            hax_warning("#BP!\n");
             htun->_exit_status = HAX_EXIT_DEBUG;
             htun->debug.rip = vcpu->state->_rip;
             htun->debug.dr6 = 0;
@@ -2843,6 +2841,10 @@ static int exit_cr_access(struct vcpu_t *vcpu, struct hax_tunnel *htun)
 
 static int exit_dr_access(struct vcpu_t *vcpu, struct hax_tunnel *htun)
 {
+    // TODO: DR-exiting flag is disabled so this function is never executed.
+    //       We should conditionally enable "DR exiting" whenever
+    //       HAX_DEBUG_USE_HW_BP is enabled, to prevent the guest from
+    //       tampering with debug drN registers.
     uint64 *dr;
     struct vcpu_state_t *state = vcpu->state;
 
@@ -3862,16 +3864,16 @@ void vcpu_debug(struct vcpu_t *vcpu, struct hax_debug_t *debug)
         // Single-stepping
         if (debug->control & HAX_DEBUG_STEP) {
             vmwrite(vcpu, GUEST_RFLAGS,
-                vmread(vcpu, GUEST_RFLAGS) | (1 << 8) /* TF */);
+                    vmread(vcpu, GUEST_RFLAGS) | EFLAGS_TF);
         } else {
             vmwrite(vcpu, GUEST_RFLAGS,
-                vmread(vcpu, GUEST_RFLAGS) & ~(1 << 8) /* TF */);
+                    vmread(vcpu, GUEST_RFLAGS) & ~EFLAGS_TF);
         }
     } else {
         vcpu->debug_control = 0;
         vmwrite(vcpu, GUEST_DR7, 0);
         vmwrite(vcpu, GUEST_RFLAGS,
-            vmread(vcpu, GUEST_RFLAGS) & ~(1 << 8) /* TF */);
+                vmread(vcpu, GUEST_RFLAGS) & ~EFLAGS_TF);
     }
     vcpu_update_exception_bitmap(vcpu);
 };
